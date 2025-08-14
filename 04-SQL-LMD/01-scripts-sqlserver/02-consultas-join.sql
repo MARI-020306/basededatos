@@ -169,3 +169,112 @@ jefe.Nombre AS [Jefe]
 FROM Representantes AS jefe
 INNER JOIN Representantes AS sub
 ON jefe.Num_Empl=sub.Jefe;
+
+--Consultas de Agregado (Max, Min, AVG, COUNT(*), COUNT(CAMPO))
+--¿Cual es el rendimiento medio de la cuota de los representantes?
+
+SELECT AVG(Cuota) AS [Rendimiento de las Cuotas]
+FROM Representantes;
+
+--Cual es la cuota mayor y menor
+SELECT MAX(Cuota) AS [Cuota Mayor]
+FROM Representantes;
+
+SELECT MIN(Cuota) AS [Cuota Menor]
+FROM Representantes;
+
+SELECT MAX(Cuota) AS [Cuota Mayor],
+MIN(Cuota) AS [Cuota Menor]
+FROM Representantes;
+
+--Seleccionar la fecha de pedido mas antigua
+SELECT MIN (Fecha_Pedido) AS [Fecha antigua]
+FROM Pedidos;
+
+--Calcular el rendimiento en ventas de los representates
+
+SELECT 100 * (Ventas/Cuota) AS [Rendimiento de Ventas]
+FROM Representantes
+WHERE 100 * (Ventas/Cuota) IS NOT NULL ;
+
+--Calcular el rendimiento medio en ventas;
+SELECT AVG (100 * (Ventas/Cuota)) AS [Promedio de Rendimiento de Ventas]
+FROM Representantes
+WHERE 100 * (Ventas/Cuota) IS NOT NULL ;
+
+--Cuales son las cuotas y ventas totales de todos los representantes
+SELECT SUM(p.Importe)
+FROM Representantes AS r
+INNER JOIN Pedidos AS p
+ON r.Num_Empl = p.Rep;
+
+--Cual es el importe total de pedidos de Bruno Arteaga
+SELECT r.Nombre ,SUM(p.Importe)
+FROM Representantes AS r
+INNER JOIN Pedidos AS p
+ON r.Num_Empl = p.Rep
+GROUP BY r.Nombre;
+
+--Cuantos representantes exceden su cuota
+--COUNT(*)CUENTA LAS FILAS
+--COUNT(CAMPO) CUENTA LOS REGISTROS DEL CAMPO SELECCIONADO
+
+SELECT COUNT(*), COUNT(CUOTA)
+FROM Representantes
+WHERE Ventas>Cuota;
+
+SELECT *
+FROM Representantes
+WHERE Ventas>Cuota;
+
+--Cuantos pedidos de mas de 25000 hay
+SELECT COUNT(Num_Pedido)
+FROM Pedidos
+WHERE Importe> 25000; 
+
+--Cuantos puestos tienen los representantes
+SELECT COUNT(DISTINCT Puesto)
+FROM Representantes;
+
+--¿Cual es el importe medio de los pedidos de cada uno de los representantes?
+SELECT Nombre, AVG(Importe) AS [Importe Medio]
+FROM Pedidos AS p
+INNER JOIN
+Representantes AS r
+ON p.Rep=r.Num_Empl
+GROUP BY Nombre;
+
+--SOLO REPRESENTANTES ESPECIFICOS
+SELECT Nombre, AVG(Importe) AS [Importe Medio]
+FROM Pedidos AS p
+INNER JOIN
+Representantes AS r
+ON p.Rep=r.Num_Empl
+WHERE r.Nombre in ('Tomás Saz', 'María Jiménez', 'Pablo Cruz')
+GROUP BY Nombre;
+
+CREATE OR ALTER PROCEDURE sp_pruebaconsulta
+@FechaInicial date,
+@FechaFinal date
+AS
+BEGIN
+SELECT Nombre, AVG(Importe) AS [Importe Medio]
+FROM Pedidos AS p
+INNER JOIN
+Representantes AS r
+ON p.Rep=r.Num_Empl
+WHERE Fecha_Pedido BETWEEN @FechaInicial and @FechaFinal
+GROUP BY Nombre;
+END
+
+EXEC sp_pruebaconsulta '1990-01-01', '1990-04-06'
+
+
+--Cual es el rango de las cuotas asignadas de cada oficina
+
+SELECT o.Ciudad, (MAX(r.Cuota) - MIN(r.Cuota))
+FROM Oficinas AS o
+INNER JOIN
+Representantes AS r
+ON o.Oficina = r.Oficina_Rep
+GROUP BY o.Ciudad;
