@@ -272,9 +272,96 @@ EXEC sp_pruebaconsulta '1990-01-01', '1990-04-06'
 
 --Cual es el rango de las cuotas asignadas de cada oficina
 
-SELECT o.Ciudad, (MAX(r.Cuota) - MIN(r.Cuota))
+SELECT o.Ciudad,r.Nombre, MAX(r.Cuota),MIN(r.Cuota),
+(MAX(r.Cuota) - MIN(r.Cuota))
 FROM Oficinas AS o
 INNER JOIN
 Representantes AS r
 ON o.Oficina = r.Oficina_Rep
-GROUP BY o.Ciudad;
+GROUP BY o.Ciudad, r.Nombre
+ORDER BY o.Ciudad;
+
+USE NORTHWND;
+
+/*
+1) Seleccionar el ingreso total por cliente en 1997 ordenado por el ingreso 
+de forma decendente
+*/
+
+SELECT COUNT(c.CompanyName) AS [Cliente], 
+SUM(od.Quantity * od.UnitPrice *(1 - od.Discount)) AS [INGRESO]
+FROM [Order Details] AS od
+INNER JOIN Orders AS o
+ON o.OrderID = od.OrderID
+INNER JOIN Customers AS c
+ON c.CustomerID= o.CustomerID;
+
+--Usar GRUOP BY para agrupar por clientes y por fecha
+SELECT c.CompanyName AS [Cliente], 
+ROUND(SUM(od.Quantity * od.UnitPrice *(1 - od.Discount)),2) AS [INGRESO]
+FROM [Order Details] AS od
+INNER JOIN Orders AS o
+ON o.OrderID = od.OrderID
+INNER JOIN Customers AS c
+ON c.CustomerID= o.CustomerID
+WHERE YEAR(O.OrderDate) = 1997
+GROUP BY c.CompanyName
+ORDER BY 2 DESC;;
+
+SELECT c.CompanyName AS [Cliente], 
+ROUND(SUM(od.Quantity * od.UnitPrice *(1 - od.Discount)),2) AS [INGRESO]
+FROM [Order Details] AS od
+INNER JOIN Orders AS o
+ON o.OrderID = od.OrderID
+INNER JOIN Customers AS c
+ON c.CustomerID= o.CustomerID
+WHERE DATEPART(yy, O.OrderDate) = 1997
+GROUP BY c.CompanyName
+ORDER BY 2 DESC;
+
+--Obtener el top 10 de los clientes que mas compran
+SELECT TOP 10 c.CompanyName AS [Cliente], 
+ROUND(SUM(od.Quantity * od.UnitPrice *(1 - od.Discount)),2) AS [INGRESO]
+FROM [Order Details] AS od
+INNER JOIN Orders AS o
+ON o.OrderID = od.OrderID
+INNER JOIN Customers AS c
+ON c.CustomerID= o.CustomerID
+WHERE DATEPART(yy, O.OrderDate) = 1997
+GROUP BY c.CompanyName
+ORDER BY 2 DESC;
+GO
+
+/*
+2) Seleccionar los productos por categoria mas vendidos (UNIDADES),
+enviados a Alemania ordenados por categoria y dentro de categoria por unidad
+de forma descendete
+*/
+USE NORTHWND;
+SELECT c.CategoryName AS [Categoria],
+p.ProductName AS [Producto],
+SUM(od.Quantity) AS [Unidades]
+FROM [Order Details] AS od
+INNER JOIN Orders AS o
+ON o.OrderID= od.OrderID
+INNER JOIN Products AS p
+ON p.ProductID = od.ProductID
+INNER JOIN Categories AS c
+ON c.CategoryID= p.CategoryID
+WHERE o.ShipCountry = 'Germany'
+GROUP BY c.CategoryName, p.ProductName
+ORDER BY 1,[Unidades] DESC;
+
+/*
+3) Selecionar los empleados con mas pedidos realizados por año
+ordenados por año y por numero de pedidos
+*/
+
+SELECT CONCAT(e.FirstName, ' ', e.LastName) AS [Nombre Completo de Empleado],
+DATEPART(YEAR, o.OrderDate) AS [Año],
+COUNT(*) AS [Pedidos Realizados]
+FROM Orders AS o
+INNER JOIN Employees AS e
+ON e.EmployeeID= o.EmployeeID
+GROUP BY CONCAT(e.FirstName, ' ', e.LastName), DATEPART(YEAR, o.OrderDate)
+ORDER BY [Año], [Pedidos Realizados] DESC;
